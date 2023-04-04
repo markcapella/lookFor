@@ -1,27 +1,26 @@
-# lookFor
+# <ins>lookFor</ins>
 
     alias - lf
 
 
-## Description
+## <ins>Description</ins>
 
 ###    Quickly look for files on your system, using (optionally), a string portion
 ###    of the file name, the location to be searched, and anything the file name ends with.
 
 
 
-## Installation
+## <ins>Installation</ins>
 
 ###    CD into source repo.
 
     make
+    make install
+
+    make uninstall
     make clean
 
-    make install
-    make uninstall
-
-
-## Usage
+## <ins>Usage</ins>
 
 ###    lookFor {string=""} {target="."} {endswith=""}
 ###    lf {string=""} {target="."} {endswith=""}
