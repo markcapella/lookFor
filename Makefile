@@ -17,7 +17,7 @@ lookFor.o: lookFor.cpp
 # ****************************************************
 # Targets needed to bring the executable up to date
 
-install:
+install: lookFor
 	cp lookFor ~/.local/bin
 	chmod +x ~/.local/bin/lookFor
 	ln -s -f ~/.local/bin/lookFor ~/.local/bin/lf
