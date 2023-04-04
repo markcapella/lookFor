@@ -3,7 +3,7 @@
 # Variables to control Makefile operation
 
 CC = g++
-CFLAGS = -Wall -g
+CFLAGS = -Wall -O3 -s
 
 # ****************************************************
 # Targets needed to bring the executable up to date
