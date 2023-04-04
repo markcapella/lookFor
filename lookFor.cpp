@@ -75,7 +75,6 @@ void listFilesInDir(const STRING& targetPath, const STRING& fileNameString,
     if (!dirFileHandle) {
         // cout << "listFilesInDir() targetPath: " << targetPath <<
         //           " not read due to error: " << errno << endl;
-        closedir(dirFileHandle);
         return;
     }
 
