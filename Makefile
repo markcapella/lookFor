@@ -18,20 +18,43 @@ lookFor.o: lookFor.cpp
 # Targets needed to bring the executable up to date
 
 install: lookFor
-	cp lookFor ~/.local/bin
-	chmod +x ~/.local/bin/lookFor
-	ln -s -f ~/.local/bin/lookFor ~/.local/bin/lf
+ifneq ($(shell id -u), 0)
+	@echo "You must be root to perform this action. Please re-run with:"
+	@echo "   sudo make install"
+	@echo
+	@exit 1;
+endif
 
+	@echo
+	@echo "sudo make install: starts ..."
+	cp lookFor /usr/local/bin
+	chmod +x /usr/local/bin/lookFor
+	ln -s -f /usr/local/bin/lookFor /usr/local/bin/lf
+
+	@echo
+	@type lf
 	@echo "Done!"
+	@echo
 
 uninstall:
-	rm -f ~/.local/bin/lf
-	rm -f ~/.local/bin/lookFor
+ifneq ($(shell id -u), 0)
+	@echo "You must be root to perform this action. Please re-run with:"
+	@echo "   sudo make uninstall"
+	@echo
+	@exit 1;
+endif
+
+	@echo
+	@echo "sudo make uninstall: starts ..."
+	rm -f /usr/local/bin/lf
+	rm -f /usr/local/bin/lookFor
 
 	@echo "Done!"
+	@echo
 
 clean:
 	rm -f lookFor.o
 	rm -f lookFor
 
 	@echo "Done!"
+	@echo
