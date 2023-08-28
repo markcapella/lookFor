@@ -1,22 +1,22 @@
 ﻿
 # *****************************************************
-# Variables to control Makefile operation
+# Variables to control Compile / Link.
 
 CC = g++
 CFLAGS = -Wall -O3 -s
 
 # ****************************************************
-# Targets needed to bring the executable up to date
+# Compile any single FOO.cpp file and link it as FOO.
 
-all: $(patsubst %.cpp, %.out, $(wildcard *.cpp))
+all: $(patsubst %.cpp, %.target, $(wildcard *.cpp))
 
-%.out: %.cpp Makefile
-	$(CC) $(CFLAGS) $< -o $(@:.out=)
-	@echo "Build "$(@:.out=)" Complete!"
+%.target: %.cpp Makefile
+	$(CC) $(CFLAGS) $< -o $(@:.target=)
+	@echo "Build "$(@:.target=)" Complete!"
 	@echo
 
 # ****************************************************
-# Targets needed to bring the executable up to date
+# sudo make install
 
 install: all
 ifneq ($(shell id -u), 0)
@@ -45,6 +45,9 @@ endif
 	@echo "Done!"
 	@echo
 
+# ****************************************************
+# sudo make uninstall
+
 uninstall:
 ifneq ($(shell id -u), 0)
 	@echo "You must be root to perform this action. Please re-run with:"
@@ -67,6 +70,9 @@ endif
 
 	@echo "Done!"
 	@echo
+
+# ****************************************************
+# make clean
 
 clean: $(patsubst %.cpp, %.clean, $(wildcard *.cpp))
 	@echo "Done!"

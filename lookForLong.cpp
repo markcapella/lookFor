@@ -136,7 +136,7 @@ void filterAndPrint(const STRING& targetPath, const STRING& fileNameString,
 
     // Default, all matchs, so print!
     // cout << targetPath << endl;
-    STRING systemString = "ls -alF " + targetPath;
+    STRING systemString = "ls -alFd " + targetPath;
     system(systemString.c_str());
 }
 #pragma GCC diagnostic pop
