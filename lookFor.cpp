@@ -46,11 +46,11 @@ int main(int argc, char* argv[]) {
     } else {
         // Ensure target exists, and isn't a directory.
         if (!FILE_SYS::exists(targetPathString)) {
-            cout << "Target doesn\'t exist, halting." << endl;
+            cerr << "Target doesn\'t exist, halting." << endl;
             return 0;
         }
         if (!FILE_SYS::is_directory(FILE_SYS::status(targetPathString))) {
-            cout << "Target isn\'t a directory, halting." << endl;
+            cerr << "Target isn\'t a directory, halting." << endl;
             return 0;
         }
         targetPath = FILE_SYS::canonical(targetPathString);

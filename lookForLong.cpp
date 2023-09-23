@@ -155,10 +155,9 @@ void filterAndPrint(const string& targetPath, const string& fileNameString,
 
     // Right alight the file size column.
     const int GROUP_COLUMN_INDEX = 3;
-
     const int SIZE_COLUMN_INDEX = 4;
-    const int SIZE_COLUMN_PAD_TO = 8;
 
+    const int SIZE_COLUMN_PAD_TO = 10;
     resultString.insert(resultColIndex[GROUP_COLUMN_INDEX], SIZE_COLUMN_PAD_TO -
         (resultColIndex[SIZE_COLUMN_INDEX] - resultColIndex[GROUP_COLUMN_INDEX]) + 1, ' ');
 
