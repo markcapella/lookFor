@@ -17,10 +17,12 @@
 ###    CD into source repo.
 
     make
-    make install
 
+    make install
     make uninstall
+
     make clean
+
 
 ## <ins>Usage</ins>
 
@@ -30,8 +32,7 @@
     lf
     lf foo
     lf foo ~
-    lf foo /
-    lf "" / .java
+    lf foo / .cpp
 
 
 ###    lookForLong string target endswith
@@ -40,8 +41,7 @@
     lfl
     lfl foo
     lfl foo ~
-    lfl foo /
-    lfl "" / .java
+    lfl foo / .cpp
 
 
 ### NOTE:
@@ -50,3 +50,7 @@
     the user's HOME folder is assumed un-interesting and will be skipped,
     perhaps requiring a second scan for an entire system review.
 
+
+## markcapella@twcny.rr.com Rocks !
+
+    Yeah I do.
