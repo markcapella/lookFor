@@ -85,9 +85,11 @@ void listFilesInDir(const string& targetPath, const string& fileNameString,
         newTargetPath = (targetPath == "/") ?
             targetPath + newTargetPath : targetPath + "/" + newTargetPath;
 
-        // Feature: When user scans root, avoid user home land,
+        // Feature: When user scans root, avoid user home land, & media
         //          Requires user to search seperately.
-        if (targetPath == "/" && startsWith(newTargetPath, "/home")) {
+        if (targetPath == "/" &&
+            (startsWith(newTargetPath, "/home") ||
+             startsWith(newTargetPath, "/media"))) {
             continue;
         }
 

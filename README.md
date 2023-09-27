@@ -47,8 +47,11 @@
 ### NOTE:
 
         If the target of lookFor or lookForSelect is the root dir "/",
-    the user's HOME folder is assumed un-interesting and will be skipped,
+    the user's /HOME folder is assumed un-interesting and will be skipped,
     perhaps requiring a second scan for an entire system review.
+
+        We're now also skipping /MEDIA during root scans to avoid
+    thrashing thumb storage file-systems. Use an explicit scan requeast.
 
 
 ## markcapella@twcny.rr.com Rocks !
