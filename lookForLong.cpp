@@ -129,12 +129,23 @@ void filterAndPrint(const string& targetPath, const string& fileNameString,
         }
     }
 
-    // Default, all matchs, so print!
-    // Shell and query ls ... , collect stdout result string.
-    string resultString;
+    // Create shell command string to return long file information string.
+    string systemString = "ls -alFd \"" + targetPath + "\"";
+    // cout << "System  :" << systemString << endl;
 
-    const string SYSTEM_STRING = "ls -alFd \"" + targetPath + "\"";
-    if (FILE* stdoutPipe = popen(SYSTEM_STRING.c_str(), "r")) {
+    // Ensure any back quotes in file names are escape-d.
+    // "/home/user/foo`bar"  ->  "/home/user/foo\`bar"
+    for (long unsigned int i = 0; i < systemString.size(); i++) {
+         if (systemString.substr(i, 1) == "`") {
+            systemString.insert(i, 1, '\\');
+            i++;
+        }
+    }
+    // cout << "Escaped :" << systemString << endl;
+
+    // Execute system shell command, and provide resultString.
+    string resultString;
+    if (FILE* stdoutPipe = popen(systemString.c_str(), "r")) {
         const int STDOUT_STRING_MAX = 8192;
 
         array<char, STDOUT_STRING_MAX> buffStrings;
@@ -143,6 +154,7 @@ void filterAndPrint(const string& targetPath, const string& fileNameString,
         }
         pclose(stdoutPipe);
     }
+    // cout << "Result  :" << resultString << endl;
 
     // Find all column seperators (' ') in ls result String to
     // enhance the output. File size field needs right align or output
@@ -160,8 +172,9 @@ void filterAndPrint(const string& targetPath, const string& fileNameString,
     const int SIZE_COLUMN_INDEX = 4;
 
     const int SIZE_COLUMN_PAD_TO = 10;
-    resultString.insert(resultColIndex[GROUP_COLUMN_INDEX], SIZE_COLUMN_PAD_TO -
-        (resultColIndex[SIZE_COLUMN_INDEX] - resultColIndex[GROUP_COLUMN_INDEX]) + 1, ' ');
+    resultString.insert(resultColIndex[GROUP_COLUMN_INDEX],
+        SIZE_COLUMN_PAD_TO - (resultColIndex[SIZE_COLUMN_INDEX] - resultColIndex[GROUP_COLUMN_INDEX]) + 1,
+        ' ');
 
     // Endl provided in stdout results.
     cout << resultString;
