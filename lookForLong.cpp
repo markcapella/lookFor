@@ -130,7 +130,7 @@ void filterAndPrint(const string& targetPath, const string& fileNameString,
     }
 
     // Create shell command string to return long file information string.
-    string systemString = "ls -alFd \"" + targetPath + "\"";
+    string systemString = "ls -alFdh \"" + targetPath + "\"";
     // cout << "System  :" << systemString << endl;
 
     // Ensure any back quotes in file names are escape-d.
@@ -170,11 +170,14 @@ void filterAndPrint(const string& targetPath, const string& fileNameString,
     // Right alight the file size column.
     const int GROUP_COLUMN_INDEX = 3;
     const int SIZE_COLUMN_INDEX = 4;
+    int sizeFieldLength = resultColIndex[SIZE_COLUMN_INDEX] -
+        resultColIndex[GROUP_COLUMN_INDEX];
 
-    const int SIZE_COLUMN_PAD_TO = 10;
-    resultString.insert(resultColIndex[GROUP_COLUMN_INDEX],
-        SIZE_COLUMN_PAD_TO - (resultColIndex[SIZE_COLUMN_INDEX] - resultColIndex[GROUP_COLUMN_INDEX]) + 1,
-        ' ');
+    const int SIZE_FIELD_PAD_LENGTH = 12;
+    if (sizeFieldLength < SIZE_FIELD_PAD_LENGTH) {
+        resultString.insert(resultColIndex[GROUP_COLUMN_INDEX],
+            SIZE_FIELD_PAD_LENGTH - sizeFieldLength + 1, ' ');
+    }
 
     // Endl provided in stdout results.
     cout << resultString;
