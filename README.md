@@ -18,8 +18,8 @@
 
     make
 
-    make install
-    make uninstall
+    sudo make install
+    sudo make uninstall
 
     make clean
 
