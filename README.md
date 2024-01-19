@@ -1,9 +1,8 @@
-# <ins>lookFor</ins>
+# lookFor
 
-!['lookFor'](https://github.com/markcapella/lookFor/blob/main/assets/lookFor.png)
 !['lookFor'](https://github.com/markcapella/lookFor/blob/main/assets/screenshot.png)
 
-## <ins>Description</ins>
+## Description
 
 ###    Quickly look for files on your system, using (optionally), a string portion
 ###    of the file name, the location to be searched, and anything the file name ends with.
@@ -12,7 +11,7 @@
     lfl - returns detailed file results.
 
 
-## <ins>Installation</ins>
+## Installation
 
 ###    CD into source repo.
 
@@ -24,7 +23,7 @@
     make clean
 
 
-## <ins>Usage</ins>
+## Usage
 
 ###    lookFor string target endswith
 ###    lf string target endswith
