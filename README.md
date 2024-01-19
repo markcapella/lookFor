@@ -4,8 +4,9 @@
 
 ## Description
 
-###    Quickly look for files on your system, using (optionally), a string portion
-###    of the file name, the location to be searched, and anything the file name ends with.
+       Quickly look for files on your system, using (optionally), a
+    string portion of the file name, the location to be searched, and
+    anything the file name ends with.
 
     lf  - returns simple file name results.
     lfl - returns detailed file results.
@@ -25,8 +26,8 @@
 
 ## Usage
 
-###    lookFor string target endswith
-###    lf string target endswith
+    lookFor string target endswith
+    lf string target endswith
 
     lf
     lf foo
@@ -34,8 +35,8 @@
     lf foo / .cpp
 
 
-###    lookForLong string target endswith
-###    lfl string target endswith
+    lookForLong string target endswith
+    lfl string target endswith
 
     lfl
     lfl foo
