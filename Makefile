@@ -9,6 +9,7 @@ CFLAGS = -Wall -O3 -s
 # Compile any single FOO.cpp file and link it as FOO.
 
 all: $(patsubst %.cpp, %.target, $(wildcard *.cpp))
+	ln -sf testFolder/linkTarget testFolder/softLink
 
 %.target: %.cpp Makefile
 	$(CC) $(CFLAGS) $< -o $(@:.target=)
@@ -75,6 +76,8 @@ endif
 # make clean
 
 clean: $(patsubst %.cpp, %.clean, $(wildcard *.cpp))
+	rm -f testFolder/softLink
+
 	@echo "Done!"
 	@echo
 

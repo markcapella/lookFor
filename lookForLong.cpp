@@ -1,28 +1,41 @@
-#include <dirent.h>
-#include <filesystem>
-#include <iostream>
-#include <string.h>
-#include <sys/stat.h>
 #include <unistd.h>
+#include <string.h>
+#include <iostream>
+
+#include <filesystem>
+#include <dirent.h>
+
+#include <sys/stat.h>
+#include <pwd.h>
+#include <grp.h>
 
 using namespace std;
-#define FILE_SYS std::filesystem
+#define fs std::filesystem
 
 // Local forward decls
 string findParm(string, int, char* []);
 
-void listFilesInDir(const string&, const string&, const string&);
+void listFilesInDir(const string&, const string&,
+    const string&);
 
-void filterAndPrint(const string&, const string&, const string&);
+void filterAndPrint(const string&, const string&,
+    const string&);
 
-static bool startsWith(const string&, const string&);
-static bool endsWith(const string&, const string&);
+void printFileAttributes(__mode_t fileStatus);
+void printFileOwner(struct stat* fileStatus);
+void printFileSize(long int fileSize);
+void printFileAccessDate(struct stat* fileStatus);
+void printFileName(const string& fileName);
+void printFileLink(const string& fileName);
+
+string addLeadZeroToNN(const string& nn);
+bool startsWith(const string&, const string&);
+bool endsWith(const string&, const string&);
 
 
-// *****************************************************************
-// *** lookForLong -s string -t target -e endsWith               ***
-// *****************************************************************
-
+/*****************************************************************
+ ** lookForLong -s string -t target -e endsWith
+ **/
 int main(int argc, char* argv[]) {
 
     // String, and guard the inputs.
@@ -41,32 +54,31 @@ int main(int argc, char* argv[]) {
     }
 
     // Default to working directory.
-    FILE_SYS::path targetPath;
+    fs::path targetPath;
     if (targetPathString.empty()) {
-        targetPath = FILE_SYS::canonical(FILE_SYS::current_path());
+        targetPath = fs::canonical(fs::current_path());
     } else {
         // Ensure target exists, and isn't a directory.
-        if (!FILE_SYS::exists(targetPathString)) {
+        if (!fs::exists(targetPathString)) {
             cout << "Target doesn\'t exist, halting." << endl;
             return 0;
         }
-        if (!FILE_SYS::is_directory(FILE_SYS::status(targetPathString))) {
+        if (!fs::is_directory(fs::status(targetPathString))) {
             cout << "Target isn\'t a directory, halting." << endl;
             return 0;
         }
-        targetPath = FILE_SYS::canonical(targetPathString);
+        targetPath = fs::canonical(targetPathString);
     }
 
     // Gopher it!
     listFilesInDir(targetPath, fileNameString, endsWithString);
 }
 
-// *****************************************************************
-// *** Main loop, recurse through dirs, print matches            ***
-// *****************************************************************
-
-void listFilesInDir(const string& targetPath, const string& fileNameString,
-                    const string& endsWithString) {
+/*****************************************************************
+ ** Main loop, recurse through dirs, print matches.
+ **/
+void listFilesInDir(const string& targetPath,
+    const string& fileNameString, const string& endsWithString) {
 
     DIR* dirFileHandle = opendir(targetPath.c_str());
     if (!dirFileHandle) {
@@ -78,16 +90,18 @@ void listFilesInDir(const string& targetPath, const string& fileNameString,
         string newTargetPath = dirFileEntry->d_name;
 
         // Ignore "movement" entries.
-        if (endsWith(newTargetPath, "..") || endsWith(newTargetPath, ".")) {
+        if (endsWith(newTargetPath, "..") ||
+            endsWith(newTargetPath, ".")) {
             continue;
         }
 
         // Get full file name, adjust for root.
         newTargetPath = (targetPath == "/") ?
-            targetPath + newTargetPath : targetPath + "/" + newTargetPath;
+            targetPath + newTargetPath :
+            targetPath + "/" + newTargetPath;
 
-        // Feature: When user scans root, avoid user home land, & media
-        //          Requires user to search seperately.
+        // When user scans root, avoid user home land, & media.
+        // ... Requires user to search seperately.
         if (targetPath == "/" &&
             (startsWith(newTargetPath, "/home") ||
              startsWith(newTargetPath, "/media"))) {
@@ -95,25 +109,24 @@ void listFilesInDir(const string& targetPath, const string& fileNameString,
         }
 
         // Process entry.
-        filterAndPrint(newTargetPath, fileNameString, endsWithString);
+        filterAndPrint(newTargetPath, fileNameString,
+            endsWithString);
 
-        // If dir/folder, drop in and process all, else we're just done.
+        // Recurse down if we're a directory.
         if (dirFileEntry->d_type == DT_DIR) {
-            listFilesInDir(newTargetPath, fileNameString, endsWithString);
+            listFilesInDir(newTargetPath, fileNameString,
+                endsWithString);
         }
     }
 
     closedir(dirFileHandle);
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result"
-// *****************************************************************
-// *** Helper method for each dir entry                          ***
-// *****************************************************************
-
-void filterAndPrint(const string& targetPath, const string& fileNameString,
-                    const string& endsWithString) {
+/*****************************************************************
+ ** Helper method for each dir entry.
+ **/
+void filterAndPrint(const string& targetPath,
+    const string& fileNameString, const string& endsWithString) {
 
     // Ensure fileNameString match.
     if (!fileNameString.empty()) {
@@ -129,83 +142,150 @@ void filterAndPrint(const string& targetPath, const string& fileNameString,
         }
     }
 
-    // Create shell command string to return long file information string.
-    string systemString = "ls -alFdh \"" + targetPath + "\"";
-    // cout << "System  :" << systemString << endl;
+    // Retrieve file info.
+    struct stat fileStatus;
+    bool fileStatusSuccessful = false;
+    try {
+        fileStatusSuccessful = (stat(targetPath.c_str(),
+            &fileStatus) >= 0);
+    } catch (fs::filesystem_error &e) { }
 
-    // Ensure any back quotes in file names are escape-d.
-    // "/home/user/foo`bar"  ->  "/home/user/foo\`bar"
-    for (long unsigned int i = 0; i < systemString.size(); i++) {
-         if (systemString.substr(i, 1) == "`") {
-            systemString.insert(i, 1, '\\');
-            i++;
-        }
-    }
-    // cout << "Escaped :" << systemString << endl;
+    struct stat fileLinkStatus;
+    bool fileLinkStatusSuccessful = false;
+    try {
+        fileLinkStatusSuccessful = (lstat(targetPath.c_str(),
+            &fileLinkStatus) >= 0);
+    } catch (fs::filesystem_error &e) { }
 
-    // Execute system shell command, and provide resultString.
-    string resultString;
-    if (FILE* stdoutPipe = popen(systemString.c_str(), "r")) {
-        const int STDOUT_STRING_MAX = 8192;
+    // Print long file info fields.
+    printFileAttributes(fileStatusSuccessful ?
+        fileStatus.st_mode : fileLinkStatusSuccessful ?
+            fileLinkStatus.st_mode : 0);
 
-        array<char, STDOUT_STRING_MAX> buffStrings;
-        while (fgets(buffStrings.data(), STDOUT_STRING_MAX, stdoutPipe) != NULL) {
-            resultString += buffStrings.data();
-        }
-        pclose(stdoutPipe);
-    }
-    // cout << "Result  :" << resultString << endl;
+    printFileOwner(&fileStatus);
 
-    // Find all column seperators (' ') in ls result String to
-    // enhance the output. File size field needs right align or output
-    // is annoyingly ragged.
-    const int RESULT_COLS_MAX = 5;
-    int resultColIndex[RESULT_COLS_MAX];
+    printFileSize(fileStatusSuccessful ?
+        fileStatus.st_size : fileLinkStatusSuccessful ?
+            fileLinkStatus.st_size : 0);
 
-    resultColIndex[0] = resultString.find(" ");
-    for (int i = 1; i < RESULT_COLS_MAX; i++) {
-        resultColIndex[i] = resultString.find(" ", resultColIndex[i - 1] + 1);
-    }
+    printFileAccessDate(&fileStatus);
 
-    // Right alight the file size column.
-    const int GROUP_COLUMN_INDEX = 3;
-    const int SIZE_COLUMN_INDEX = 4;
-    int sizeFieldLength = resultColIndex[SIZE_COLUMN_INDEX] -
-        resultColIndex[GROUP_COLUMN_INDEX];
+    printFileName(targetPath);
+    printFileLink(targetPath);
 
-    const int SIZE_FIELD_PAD_LENGTH = 12;
-    if (sizeFieldLength < SIZE_FIELD_PAD_LENGTH) {
-        resultString.insert(resultColIndex[GROUP_COLUMN_INDEX],
-            SIZE_FIELD_PAD_LENGTH - sizeFieldLength + 1, ' ');
-    }
-
-    // Endl provided in stdout results.
-    cout << resultString;
+    // And done.
+    printf("\n");
 }
-#pragma GCC diagnostic pop
 
-// *****************************************************************
-// *** Helper method                                             ***
-// *****************************************************************
+/*****************************************************************
+ ** Helper method.
+ **/
+void printFileAttributes(__mode_t fileAttributes) {
+    printf((S_ISDIR(fileAttributes)) ? "d" : "-");
+    printf((S_ISLNK(fileAttributes)) ? "l" : "-");
 
-static bool
-startsWith(const string& str, const string& prefix) {
+    printf((fileAttributes & S_IRUSR) ? "r" : "-");
+    printf((fileAttributes & S_IWUSR) ? "w" : "-");
+    printf((fileAttributes & S_IXUSR) ? "x" : "-");
+
+    printf((fileAttributes & S_IRGRP) ? "r" : "-");
+    printf((fileAttributes & S_IWGRP) ? "w" : "-");
+    printf((fileAttributes & S_IXGRP) ? "x" : "-");
+
+    printf((fileAttributes & S_IROTH) ? "r" : "-");
+    printf((fileAttributes & S_IWOTH) ? "w" : "-");
+    printf((fileAttributes & S_IXOTH) ? "x" : "-");
+
+    printf("  ");
+}
+
+/*****************************************************************
+ ** Helper method.
+ **/
+void printFileOwner(struct stat* fileStatus) {
+    const struct passwd *pw = getpwuid(fileStatus->st_uid);
+
+    const string fileOwner = (pw != 0) ? pw->pw_name : "";
+    printf("%-8.8s  ", fileOwner.c_str());
+}
+
+/*****************************************************************
+ ** Helper method.
+ **/
+void printFileSize(long int fileSize) {
+    printf("%10li  ", fileSize);
+}
+
+/*****************************************************************
+ ** Helper method.
+ **/
+void printFileAccessDate(struct stat* fileStatus) {
+    const static string MONTH_NAMES[] = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+
+    const std::time_t accessTime = fileStatus->st_atime;
+    const std::tm* localAccessTime =
+        std::localtime(&accessTime);
+
+    printf("%s %s %s %s:%s  ",
+        MONTH_NAMES[localAccessTime->tm_mon].c_str(),
+        addLeadZeroToNN(std::to_string(
+            localAccessTime->tm_mday)).c_str(),
+        std::to_string(localAccessTime->tm_year + 1900).c_str(),
+        addLeadZeroToNN(std::to_string(
+            localAccessTime->tm_hour)).c_str(),
+        addLeadZeroToNN(std::to_string(
+            localAccessTime->tm_min)).c_str());
+}
+
+/*****************************************************************
+ ** Helper method.
+ **/
+void printFileName(const string& fileName) {
+    printf("%s", fileName.c_str());
+}
+
+/*****************************************************************
+ ** Helper method.
+ **/
+void printFileLink(const string& fileName) {
+    try {
+        const fs::path filePath(fileName);
+        if (!fs::is_symlink(fileName)) {
+            return;
+        }
+        cout << " -> " << fs::read_symlink(fileName);
+    } catch (fs::filesystem_error &e) { }
+}
+
+/*****************************************************************
+ ** Support method helper.
+ **/
+string addLeadZeroToNN(const string& nn) {
+    return (nn.length() < 2) ? "0" + nn : nn;
+}
+
+/*****************************************************************
+ ** Helper method.
+ **/
+bool startsWith(const string& str, const string& prefix) {
     if (prefix.size() > str.size()) {
         return false;
     }
 
-    return equal(str.begin(), str.begin() + prefix.size(), prefix.begin());
+    return equal(str.begin(), str.begin() + prefix.size(),
+        prefix.begin());
 }
 
-// *****************************************************************
-// *** Helper method                                             ***
-// *****************************************************************
-
-static bool
-endsWith(const string& str, const string& postfix) {
+/*****************************************************************
+ ** Helper method.
+ **/
+bool endsWith(const string& str, const string& postfix) {
     if (postfix.size() > str.size()) {
         return false;
     }
 
-    return equal(str.begin() + str.size() - postfix.size(), str.end(), postfix.begin());
+    return equal(str.begin() + str.size() - postfix.size(),
+        str.end(), postfix.begin());
 }
