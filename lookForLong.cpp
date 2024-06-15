@@ -21,10 +21,10 @@ void listFilesInDir(const string&, const string&,
 void filterAndPrint(const string&, const string&,
     const string&);
 
-void printFileAttributes(__mode_t fileStatus);
+void printFileAttributes(__mode_t fileStatus, bool isLink);
 void printFileOwner(struct stat* fileStatus);
 void printFileSize(long int fileSize);
-void printFileAccessDate(struct stat* fileStatus);
+void printCreateModifiedDate(struct stat* fileStatus);
 void printFileName(const string& fileName);
 void printFileLink(const string& fileName);
 
@@ -142,33 +142,37 @@ void filterAndPrint(const string& targetPath,
         }
     }
 
+    // Retrieve any link file info.
+    const bool TARGET_IS_LINKFILE =
+        fs::is_symlink(targetPath);
+
+    struct stat fileStatus = {0};
+    struct stat fileLinkStatus = {0};
+
     // Retrieve file info.
-    struct stat fileStatus;
-    bool fileStatusSuccessful = false;
     try {
-        fileStatusSuccessful = (stat(targetPath.c_str(),
-            &fileStatus) >= 0);
+        stat(targetPath.c_str(), &fileStatus);
     } catch (fs::filesystem_error &e) { }
 
-    struct stat fileLinkStatus;
-    bool fileLinkStatusSuccessful = false;
-    try {
-        fileLinkStatusSuccessful = (lstat(targetPath.c_str(),
-            &fileLinkStatus) >= 0);
-    } catch (fs::filesystem_error &e) { }
+    if (TARGET_IS_LINKFILE) {
+        try {
+            lstat(targetPath.c_str(), &fileLinkStatus);
+        } catch (fs::filesystem_error &e) { }
+    }
 
-    // Print long file info fields.
-    printFileAttributes(fileStatusSuccessful ?
-        fileStatus.st_mode : fileLinkStatusSuccessful ?
-            fileLinkStatus.st_mode : 0);
-
+    // Print file attribute fields.
+    printFileAttributes(TARGET_IS_LINKFILE ?
+        fileLinkStatus.st_mode : fileStatus.st_mode,
+        TARGET_IS_LINKFILE);
     printFileOwner(&fileStatus);
 
-    printFileSize(fileStatusSuccessful ?
-        fileStatus.st_size : fileLinkStatusSuccessful ?
-            fileLinkStatus.st_size : 0);
+    // Print file size field.
+    printFileSize(TARGET_IS_LINKFILE ?
+        fileLinkStatus.st_size : fileStatus.st_size);
 
-    printFileAccessDate(&fileStatus);
+    // Print rest.
+    printCreateModifiedDate(TARGET_IS_LINKFILE ?
+        &fileLinkStatus : &fileStatus);
 
     printFileName(targetPath);
     printFileLink(targetPath);
@@ -178,11 +182,12 @@ void filterAndPrint(const string& targetPath,
 }
 
 /*****************************************************************
- ** Helper method.
+ ** Helper method for file attributes.
  **/
-void printFileAttributes(__mode_t fileAttributes) {
-    printf((S_ISDIR(fileAttributes)) ? "d" : "-");
-    printf((S_ISLNK(fileAttributes)) ? "l" : "-");
+void printFileAttributes(__mode_t fileAttributes, bool isLink) {
+    printf(isLink ? "l" :
+        S_ISDIR(fileAttributes) ? "d" :
+            "-");
 
     printf((fileAttributes & S_IRUSR) ? "r" : "-");
     printf((fileAttributes & S_IWUSR) ? "w" : "-");
@@ -200,7 +205,7 @@ void printFileAttributes(__mode_t fileAttributes) {
 }
 
 /*****************************************************************
- ** Helper method.
+ ** Helper method for file owner.
  **/
 void printFileOwner(struct stat* fileStatus) {
     const struct passwd *pw = getpwuid(fileStatus->st_uid);
@@ -210,21 +215,21 @@ void printFileOwner(struct stat* fileStatus) {
 }
 
 /*****************************************************************
- ** Helper method.
+ ** Helper method for file size.
  **/
 void printFileSize(long int fileSize) {
     printf("%10li  ", fileSize);
 }
 
 /*****************************************************************
- ** Helper method.
+ ** Helper method for file access date.
  **/
-void printFileAccessDate(struct stat* fileStatus) {
+void printCreateModifiedDate(struct stat* fileStatus) {
     const static string MONTH_NAMES[] = {
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
-    const std::time_t accessTime = fileStatus->st_atime;
+    const std::time_t accessTime = fileStatus->st_mtime;
     const std::tm* localAccessTime =
         std::localtime(&accessTime);
 
@@ -240,14 +245,14 @@ void printFileAccessDate(struct stat* fileStatus) {
 }
 
 /*****************************************************************
- ** Helper method.
+ ** Helper method for file name.
  **/
 void printFileName(const string& fileName) {
     printf("%s", fileName.c_str());
 }
 
 /*****************************************************************
- ** Helper method.
+ ** Helper method for file link name.
  **/
 void printFileLink(const string& fileName) {
     try {
@@ -260,14 +265,14 @@ void printFileLink(const string& fileName) {
 }
 
 /*****************************************************************
- ** Support method helper.
+ ** General method helper.
  **/
 string addLeadZeroToNN(const string& nn) {
     return (nn.length() < 2) ? "0" + nn : nn;
 }
 
 /*****************************************************************
- ** Helper method.
+ ** General method helper.
  **/
 bool startsWith(const string& str, const string& prefix) {
     if (prefix.size() > str.size()) {
@@ -279,7 +284,7 @@ bool startsWith(const string& str, const string& prefix) {
 }
 
 /*****************************************************************
- ** Helper method.
+ ** General method helper.
  **/
 bool endsWith(const string& str, const string& postfix) {
     if (postfix.size() > str.size()) {
