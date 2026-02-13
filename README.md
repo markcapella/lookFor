@@ -1,6 +1,6 @@
 # lookFor
     
-!['lookFor'](https://github.com/markcapella/lookFor/blob/main/assets/screenshot.png)
+!['lookFor'](https://github.com/markcapella/lookFor/blob/main/screenshot.png)
     
 ## Description
         Quickly look for files on your system, using (optionally), a
@@ -13,6 +13,16 @@
     
 ## Installation
     
+### Install Pre-reqs.
+
+For Debian systems:
+
+    sudo apt install git build-essential libglib2.0-dev libgtk-3-dev gettext automake libx11-dev libxft-dev libxpm-dev libxt-dev libxext-dev x11proto-dev libxinerama-dev libxtst-dev libxkbcommon-dev libgsl-dev appmenu-gtk3-module
+
+For Fedora systems:
+
+    sudo dnf install git gcc gcc-c++ make glib2-devel gtk3-devel gdk-pixbuf2-modules-extra gettext automake libX11-devel libXft-devel libXpm-devel libXt-devel libXext-devel xorg-x11-proto-devel libXinerama-devel libXtst-devel libxkbcommon-devel gsl-devel unity-gtk3-module
+
 ### CD into source repo.
     make
     

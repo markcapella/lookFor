@@ -3,7 +3,7 @@
 # Variables to control Makefile operation.
 
 APP_NAME = "lookFor"
-APP_VERSION = "2026-01-01"
+APP_VERSION = "2026-02-13"
 APP_AUTHOR = "Mark James Capella"
 
 # Color styling.
@@ -18,8 +18,11 @@ COLOR_MAGENTA := $(shell tput setaf 5)
 COLOR_CYAN := $(shell tput setaf 6)
 COLOR_WHITE := $(shell tput setaf 7)
 
-CC = g++
-CFLAGS = -Wall -O3 -s
+CPP = g++
+
+APP_CFLAGS=-Wall -ansi -g -m64 -std=c++17
+APP_LFLAGS=-m64 -L/usr/lib/x86_64-linux-gnu -lX11 -lxcb -lXpm
+
 
 # ****************************************************
 # Compile any single FOO.cpp file and link it as FOO.
@@ -42,12 +45,13 @@ all:
 
 	@rm -f "BUILD_COMPLETE"
 
-	$(CC) $(CFLAGS) -c lookFor.cpp
-	$(CC) lookFor.o $(APP_LFLAGS) -o lookFor
+	$(CPP) $(APP_CFLAGS) -c lookFor.cpp
+	$(CPP) lookFor.o $(APP_LFLAGS) -o lookFor
 	@echo
-	$(CC) $(CFLAGS) -c lookForLong.cpp
-	$(CC) lookForLong.o $(APP_LFLAGS) -o lookForLong
+	$(CPP) $(APP_CFLAGS) -c lookForLong.cpp
+	$(CPP) lookForLong.o $(APP_LFLAGS) -o lookForLong
 	@echo
+
 	ln -sf testFolder/linkTarget testFolder/softLink
 
 	@echo "true" > "BUILD_COMPLETE"
@@ -86,16 +90,19 @@ install:
 	@echo
 
 	cp lookFor /usr/local/bin
-	chmod +x /usr/local/bin/lookFor
-	ln -s -f /usr/local/bin/lookFor /usr/local/bin/lf
-	@type lf
+	cp lookForLong /usr/local/bin
+	cp lf /usr/local/bin
+	cp lfl /usr/local/bin
 	@echo
 
-	cp lookForLong /usr/local/bin
+	chmod +x /usr/local/bin/lookFor
 	chmod +x /usr/local/bin/lookForLong
-	ln -s -f /usr/local/bin/lookForLong /usr/local/bin/lfl
-	@type lfl
+	chmod +x /usr/local/bin/lf
+	chmod +x /usr/local/bin/lfl
 	@echo
+
+	@type lf
+	@type lfl
 
 	@echo
 	@echo "$(COLOR_BLUE)Install Done.$(COLOR_NORMAL)"
@@ -119,12 +126,10 @@ uninstall:
 	@echo "$(COLOR_BLUE)Uninstall Starts.$(COLOR_NORMAL)"
 	@echo
 
-	rm -f /usr/local/bin/lf
 	rm -f /usr/local/bin/lookFor
-	@echo
-
-	rm -f /usr/local/bin/lfl
 	rm -f /usr/local/bin/lookForLong
+	rm -f /usr/local/bin/lf
+	rm -f /usr/local/bin/lfl
 	@echo
 
 	@echo
